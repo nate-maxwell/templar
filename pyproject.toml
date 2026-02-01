@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "templar"
+description = "A lightweight, type-safe path templating system for building and parsing file paths from dataclass contexts"
+readme = "README.md"
+requires-python = ">=3.9"
+
+authors = [
+    {name = "Nate Maxwell"}
+]
+
+keywords = ["path", "template", "pipeline", "filesystem"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+version = "0.1.0"
+
+[project.urls]
+Homepage = "https://github.com/nate-maxwell/templar"
+Repository = "https://github.com/nate-maxwell/templar"
