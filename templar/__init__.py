@@ -1,1 +1,1 @@
-from template import *
+from templar.template import *
