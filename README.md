@@ -79,8 +79,10 @@ path = resolver.resolve_any(ctx, prefer=["shot_pub_episodic", "shot_pub"])
 # V:\shows\supernatural\seq\e01\010\0010\__pub__\maya\mb
 
 # Parse paths back to context
-path = Path("V:/shows/supernatural/seq/e01/010/0010/__pub__/maya/scene.ma")
+path = Path("V:/shows/supernatural/seq/e01/DEF/0010/__pub__/maya/scene.ma")
 ctx = resolver.parse_path(path)
-# VFXContext(show='supernatural', episode='e01', seq='010', shot='0010',
-#            dcc='maya', file_name='scene', file_type='ma')
+# VFXContext(
+#     show='supernatural', episode='e01', seq='DEF', shot='0010',
+#     dcc='maya', file_name='scene', file_type='ma'
+# )
 ```
