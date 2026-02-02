@@ -233,7 +233,7 @@ class PathResolver(Generic[ContextT]):
             pattern = template.pattern.replace("\\", "/")
             pattern = re.escape(pattern)
 
-            def replace_token(match_) -> str:
+            def replace_token(match_: re.Match[str]) -> str:
                 """
                 Replaces tokens with appropriate capture groups.
                 Done in a single pass to avoid conflicts.
