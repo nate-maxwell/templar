@@ -14,7 +14,6 @@ dataclass contexts with full IDE autocomplete support.
 
 - **Type-safe contexts**: Use dataclasses instead of raw dictionaries for full IDE support
 - **Bidirectional**: Build paths from context, or parse context from paths
-- **Optional tokens**: Templates automatically adapt to available context fields
 - **JSON configuration**: Load path templates from external JSON files
 - **Generic design**: Works with any dataclass structure
 - **Zero dependencies**: Uses only Python standard library
