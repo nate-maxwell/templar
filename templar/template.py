@@ -232,35 +232,13 @@ class PathResolver(Generic[ContextT]):
         for template in self.templates.values():
             pattern = template.pattern.replace("\\", "/")
             pattern = re.escape(pattern)
-
-            def replace_token(match_: re.Match[str]) -> str:
-                """
-                Replaces tokens with appropriate capture groups.
-                Done in a single pass to avoid conflicts.
-                """
-                token_name = match_.group(1)
-                if token_name in ("file_name", "file_type"):
-                    # Exclude dots and slashes for filename components
-                    return f"(?P<{token_name}>[^/.]+)"
-
-                # Exclude only slashes for other tokens
-                return f"(?P<{token_name}>[^/]+)"
-
-            pattern = re.sub(r"<(\w+)>", replace_token, pattern)
+            pattern = re.sub(r"<(\w+)>", r"(?P<\1>[^/]+)", pattern)
             pattern = f"^{pattern}$"
 
             if not (match := re.match(pattern, path_str)):
                 continue
 
             context_data = match.groupdict()
-            had_file_name = "file_name" in template.tokens
-            had_file_type_token = "file_type" in template.tokens
-
-            if not had_file_name and path.stem:
-                context_data["file_name"] = path.stem
-            if not had_file_type_token and path.suffix:
-                context_data["file_type"] = path.suffix.lstrip(".")
-
             return self.context_type(**context_data)
 
         return None
