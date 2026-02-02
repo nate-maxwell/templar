@@ -55,7 +55,8 @@ resolver.register(
 # templates.json:
 # {
 #   "asset_pub": "V:/shows/_alexandria/asset/<category>/<asset>/__pub__/<dcc>/<file_type>",
-#   "render": "V:/shows/<show>/render/<seq>/<shot>/<element>"
+#   "render": "V:/shows/<show>/render/<seq>/<shot>/<element>",
+#   ...
 # }
 resolver.load_from_json(Path("templates.json"))
 
@@ -74,7 +75,7 @@ path = resolver.resolve("shot_pub_episodic", ctx)
 # V:\shows\supernatural\seq\e01\010\0010\__pub__\maya\mb
 
 # Auto-select with preference order
-path = resolver.resolve_any(ctx, prefer=["shot_pub_episodic", "shot_pub"])
+path = resolver.resolve_any(ctx, prefer=["shot_pub_episodic", "shot_pub_feature"])
 # V:\shows\supernatural\seq\e01\010\0010\__pub__\maya\mb
 
 # Parse paths back to context
