@@ -37,7 +37,7 @@ class VFXContext(object):
     file_type: Optional[str] = None
     file_name: Optional[str] = None
 
-# Create resolver
+
 resolver = PathResolver(VFXContext)
 
 # Register templates manually
