@@ -89,3 +89,40 @@ ctx = resolver.parse_path(path)
 #     dcc='maya', file_name='scene', file_type='ma'
 # )
 ```
+
+## Composite Resolver
+
+You can use a CompositeResolver to register multiple dataclasses and manage
+their corresponding templates like so:
+
+```python
+@dataclass
+class ShotContext:
+    show: Optional[str] = None
+    seq: Optional[str] = None
+    shot: Optional[str] = None
+
+
+@dataclass
+class AssetContext:
+    category: Optional[str] = None
+    asset: Optional[str] = None
+
+
+# Single composite resolver for all context types
+composite = CompositeResolver()
+
+# Register templates for different contexts
+composite.register(ShotContext, "shot", "V:/shows/<show>/seq/<seq>/<shot>")
+composite.register(AssetContext, "asset", "V:/assets/<category>/<asset>")
+
+shot_path = Path("V:/shows/demo/seq/010/0010")
+asset_path = Path("V:/assets/props/table")
+
+shot_parsed = composite.parse_path(ShotContext, shot_path)
+asset_parsed = composite.parse_path(AssetContext, asset_path)
+
+print(f"\nshow: {shot_parsed.show}")  # show: demo
+print(f"seq: {shot_parsed.seq}")  # seq: 010
+print(f"shot: {shot_parsed.shot}")  # shot: 0010
+```
