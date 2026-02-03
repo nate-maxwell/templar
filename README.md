@@ -96,6 +96,9 @@ You can use a CompositeResolver to register multiple dataclasses and manage
 their corresponding templates like so:
 
 ```python
+from templar import CompositeResolver
+
+
 @dataclass
 class ShotContext:
     show: Optional[str] = None
