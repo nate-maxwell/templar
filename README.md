@@ -19,12 +19,14 @@ dataclass contexts with full IDE autocomplete support.
 - **Zero dependencies**: Uses only Python standard library
 
 ## Usage
+
 ```python
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 from templar import PathResolver
+
 
 # Define your context
 @dataclass
@@ -75,7 +77,8 @@ path = resolver.resolve("shot_pub_episodic", ctx)
 # V:\shows\supernatural\seq\e01\010\0010\__pub__\maya\mb
 
 # Auto-select with preference order
-path = resolver.resolve_any(ctx, prefer=["shot_pub_episodic", "shot_pub_feature"])
+path = resolver.resolve_any(ctx,
+                            prefer=["shot_pub_episodic", "shot_pub_feature"])
 # V:\shows\supernatural\seq\e01\010\0010\__pub__\maya\mb
 
 # Parse paths back to context

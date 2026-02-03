@@ -242,3 +242,95 @@ class PathResolver(Generic[ContextT]):
             return self.context_type(**context_data)
 
         return None
+
+
+class CompositeResolver(object):
+    """
+    Manages multiple PathResolvers for different context types.
+
+    Allows registration and resolution of path templates across multiple
+    context dataclasses without needing separate resolver instances. Routes
+    operations to the appropriate resolver based on context type.
+    """
+
+    def __init__(self) -> None:
+        self._registry: dict[type, PathResolver] = {}
+
+    def register(self, context_type: type[ContextT], name: str, pattern: str) -> None:
+        """
+        Register a path template for a specific context type.
+        Creates a new PathResolver for the context type if one doesn't exist.
+
+        Args:
+            context_type (type[ContextT]): Dataclass type for this template.
+            name (str): Template identifier.
+            pattern (str): Path pattern with <token> placeholders.
+        """
+        if context_type not in self._registry:
+            resolver = PathResolver(context_type)
+            self._registry[context_type] = resolver
+        else:
+            resolver = self._registry[context_type]
+
+        resolver.register(name, pattern)
+
+    def resolve(self, name: str, context: ContextT) -> Path:
+        """
+        Resolve a template by name using the context's type.
+
+        Args:
+            name (str): Template name.
+            context (ContextT): Context instance with values.
+        Returns:
+            Path: Formatted path.
+        """
+        resolver = self._registry[type(context)]
+        return resolver.resolve(name, context)
+
+    def resolve_any(
+        self, context: ContextT, prefer: list[str] = None
+    ) -> Optional[Path]:
+        """
+        Find and resolve the first matching template for the context's type.
+
+        Args:
+            context (ContextT): Context instance with values.
+            prefer (list[str]): Optional ordered list of template names to try first.
+        Returns:
+            Path: Formatted path from first matching template, or None.
+        """
+        resolver = self._registry[type(context)]
+        return resolver.resolve_any(context, prefer)
+
+    def find_matches(self, context: ContextT) -> list[str]:
+        """
+        Find all templates that can be formatted with the given context.
+
+        Args:
+            context (ContextT): Context instance to check.
+        Returns:
+            list[str]: Names of matching templates.
+        """
+        resolver = self._registry[type(context)]
+        return resolver.find_matches(context)
+
+    def parse_path(
+        self, context_type: type[ContextT], path: Path
+    ) -> Optional[ContextT]:
+        """
+        Parse a path into a context instance using registered templates.
+
+        Args:
+            context_type (type[ContextT]): Dataclass type to parse into.
+            path (Path): File path to parse.
+        Returns:
+            ContextT: Context with extracted values, or None if no match.
+        Raises:
+            ValueError: If context_type has no registered templates.
+        """
+        if context_type not in self._registry:
+            raise ValueError(
+                f"Context type {context_type} is not currently registered!"
+            )
+        resolver = self._registry[context_type]
+        return resolver.parse_path(path)
