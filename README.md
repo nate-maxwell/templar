@@ -208,3 +208,11 @@ Path inheritance JSON storing:
   }
 }
 ```
+
+# Roadmap
+
+- [ ] Template Validation - Validate that a valid path can be made before creating it
+- [ ] Normalization - Auto-sanitize values (remove illegal chars, enforce naming conventions)
+- [x] Variable Syntax - Support `{variable}` syntax in addition to `<token>` syntax
+- [ ] Token formatters - (`<seq:04>` -> "0010" instead of "10", `<show:upper>`, `<episode:default=pilot>`)
+- [x] Template chains / Inheritance - base templates that other templates extend
