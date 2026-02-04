@@ -16,7 +16,7 @@ dataclass contexts with full IDE autocomplete support.
 - **Bidirectional**: Build paths from context, or parse context from paths
 - **JSON configuration**: Load path templates from external JSON files
 - **Generic design**: Works with any dataclass structure
-- **Zero dependencies**: Uses only Python standard library
+- **Variable supper**: Create reusable variables to prefill path parts
 
 ## Usage
 
@@ -128,4 +128,32 @@ asset_parsed = composite.parse_path(AssetContext, asset_path)
 print(f"\nshow: {shot_parsed.show}")  # show: demo
 print(f"seq: {shot_parsed.seq}")  # seq: 010
 print(f"shot: {shot_parsed.shot}")  # shot: 0010
+```
+
+## Variables
+
+Use variables in templates with `{variable}` syntax like so:
+```python
+import platform
+
+# Define variables once
+root = "V:/projects" if platform.system() == "Windows" else "/mnt/storage/projects"
+resolver = PathResolver(VFXContext, variables={"PROJECT_ROOT": root})
+
+# Use {variable} syntax in templates (different from <token> syntax)
+resolver.register("shot", "{PROJECT_ROOT}/shows/<show>/seq/<seq>/<shot>")
+
+# Variables are substituted when templates are registered
+ctx = VFXContext(show="demo", seq="010", shot="0010")
+path = resolver.resolve("shot", ctx)
+
+# Windows: V:\projects\shows\demo\seq\010\0010
+# Linux:   /mnt/storage/projects/shows/demo/seq/010/0010
+```
+
+Variables work with `CompositeResolver` too - just pass them during initialization and all registered templates will use them:
+```python
+composite = CompositeResolver(variables={"PROJECT_ROOT": root, "ASSET_LIB": "library"})
+composite.register(ShotContext, "shot", "{PROJECT_ROOT}/shows/<show>")
+composite.register(AssetContext, "asset", "{PROJECT_ROOT}/{ASSET_LIB}/<category>/<asset>")
 ```

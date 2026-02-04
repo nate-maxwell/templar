@@ -129,9 +129,12 @@ class PathResolver(Generic[ContextT]):
     populated in the context.
     """
 
-    def __init__(self, context_type: type[ContextT]) -> None:
+    def __init__(
+        self, context_type: type[ContextT], variables: dict[str, str] = None
+    ) -> None:
         self.templates: dict[str, PathTemplate[ContextT]] = {}
         self.context_type = context_type
+        self.variables = variables or {}
 
     def register(self, name: str, pattern: str) -> None:
         """
@@ -141,7 +144,11 @@ class PathResolver(Generic[ContextT]):
             name (str): Template identifier.
             pattern (str): Path pattern with <token> placeholders.
         """
-        self.templates[name] = PathTemplate[ContextT](pattern, name)
+        resolved_pattern = pattern
+        for var_name, var_value in self.variables.items():
+            resolved_pattern = resolved_pattern.replace(f"{{{var_name}}}", var_value)
+
+        self.templates[name] = PathTemplate[ContextT](resolved_pattern, name)
 
     def load_from_json(self, json_path: Path) -> None:
         """
@@ -253,8 +260,9 @@ class CompositeResolver(object):
     operations to the appropriate resolver based on context type.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, variables: dict[str, str] = None) -> None:
         self._registry: dict[type, PathResolver] = {}
+        self.variables = variables or {}
 
     def register(self, context_type: type[ContextT], name: str, pattern: str) -> None:
         """
@@ -264,10 +272,10 @@ class CompositeResolver(object):
         Args:
             context_type (type[ContextT]): Dataclass type for this template.
             name (str): Template identifier.
-            pattern (str): Path pattern with <token> placeholders.
+            pattern (str): Path pattern with <token> placeholders and {variable} substitutions.
         """
         if context_type not in self._registry:
-            resolver = PathResolver(context_type)
+            resolver = PathResolver(context_type, variables=self.variables)
             self._registry[context_type] = resolver
         else:
             resolver = self._registry[context_type]
