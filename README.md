@@ -17,6 +17,7 @@ dataclass contexts with full IDE autocomplete support.
 - **JSON configuration**: Load path templates from external JSON files
 - **Generic design**: Works with any dataclass structure
 - **Variable supper**: Create reusable variables to prefill path parts
+- **Path Inheritance**: Paths can extend base paths
 
 ## Usage
 
@@ -156,4 +157,54 @@ Variables work with `CompositeResolver` too - just pass them during initializati
 composite = CompositeResolver(variables={"PROJECT_ROOT": root, "ASSET_LIB": "library"})
 composite.register(ShotContext, "shot", "{PROJECT_ROOT}/shows/<show>")
 composite.register(AssetContext, "asset", "{PROJECT_ROOT}/{ASSET_LIB}/<category>/<asset>")
+```
+
+## Template Inheritance
+
+Build complex path hierarchies by extending base templates:
+```python
+from dataclasses import dataclass
+from typing import Optional
+from templar import PathResolver
+
+@dataclass
+class VFXContext:
+    show: Optional[str] = None
+    seq: Optional[str] = None
+    shot: Optional[str] = None
+    task: Optional[str] = None
+    version: Optional[str] = None
+
+resolver = PathResolver(VFXContext)
+
+# Define base templates
+resolver.register("show_base", "V:/shows/<show>")
+resolver.register("seq_base", "seq/<seq>", base="show_base")
+resolver.register("shot_base", "<shot>/work", base="seq_base")
+
+# Extend to create specific paths
+resolver.register("task_version", "<task>/v<version>", base="shot_base")
+
+ctx = VFXContext(show="demo", seq="DEF", shot="0010", task="anim", version="001")
+path = resolver.resolve("task_version", ctx)
+print(path)  # V:\shows\demo\seq\DEF\0010\work\anim\v001
+```
+
+Path inheritance JSON storing:
+```json
+{
+  "show_base": "V:/shows/<show>",
+  "seq_base": {
+    "pattern": "seq/<seq>",
+    "base": "show_base"
+  },
+  "shot_work": {
+    "pattern": "<shot>/__work__",
+    "base": "seq_base"
+  },
+  "shot_pub": {
+    "pattern": "<shot>/__pub__",
+    "base": "seq_base"
+  }
+}
 ```

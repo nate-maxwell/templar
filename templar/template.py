@@ -72,9 +72,16 @@ class PathTemplate(Generic[ContextT]):
 
     TOKEN_PATTERN = re.compile(r"<(\w+)>")
 
-    def __init__(self, pattern: str, name: str = "") -> None:
-        self.pattern = pattern
+    def __init__(
+        self, pattern: str, name: str = "", base: Optional["PathTemplate"] = None
+    ) -> None:
+        if base:
+            self.pattern = f"{base.pattern}/{pattern}"
+        else:
+            self.pattern = pattern
+
         self.name = name
+        self.base = base
         self.tokens = self._extract_tokens()
 
     def _extract_tokens(self) -> set[str]:
@@ -136,19 +143,28 @@ class PathResolver(Generic[ContextT]):
         self.context_type = context_type
         self.variables = variables or {}
 
-    def register(self, name: str, pattern: str) -> None:
+    def register(self, name: str, pattern: str, base: Optional[str] = None) -> None:
         """
         Register a new path template.
 
         Args:
             name (str): Template identifier.
             pattern (str): Path pattern with <token> placeholders.
+            base (str): Optional name of base template to extend.
         """
         resolved_pattern = pattern
         for var_name, var_value in self.variables.items():
             resolved_pattern = resolved_pattern.replace(f"{{{var_name}}}", var_value)
 
-        self.templates[name] = PathTemplate[ContextT](resolved_pattern, name)
+        base_template = None
+        if base:
+            if base not in self.templates:
+                raise KeyError(f"Base template '{base}' not found")
+            base_template = self.templates[base]
+
+        self.templates[name] = PathTemplate[ContextT](
+            resolved_pattern, name, base=base_template
+        )
 
     def load_from_json(self, json_path: Path) -> None:
         """
@@ -160,14 +176,23 @@ class PathResolver(Generic[ContextT]):
         The JSON file should have the format:
         {
             "template_name": "pattern/with/<tokens>",
-            "another_template": "another/pattern/<with>/<tokens>"
+            "another_template": {
+                "pattern": "another/pattern/<with>/<tokens>",
+                "base": "template_name"
+            }
         }
         """
         with open(json_path, "r") as f:
             templates_data = json.load(f)
 
-        for name, pattern in templates_data.items():
-            self.register(name, pattern)
+        for name, value in templates_data.items():
+            if isinstance(value, str):
+                self.register(name, value)
+
+            elif isinstance(value, dict):  # Pattern with base template
+                pattern = value["pattern"]
+                base = value.get("base")
+                self.register(name, pattern, base=base)
 
     def resolve(self, name: str, context: ContextT) -> Path:
         """
@@ -264,7 +289,13 @@ class CompositeResolver(object):
         self._registry: dict[type, PathResolver] = {}
         self.variables = variables or {}
 
-    def register(self, context_type: type[ContextT], name: str, pattern: str) -> None:
+    def register(
+        self,
+        context_type: type[ContextT],
+        name: str,
+        pattern: str,
+        base: Optional[str] = None,
+    ) -> None:
         """
         Register a path template for a specific context type.
         Creates a new PathResolver for the context type if one doesn't exist.
@@ -272,7 +303,9 @@ class CompositeResolver(object):
         Args:
             context_type (type[ContextT]): Dataclass type for this template.
             name (str): Template identifier.
-            pattern (str): Path pattern with <token> placeholders and {variable} substitutions.
+            pattern (str): Path pattern with <token> placeholders and {variable}
+                substitutions.
+            base (str): Optional name of base template to extend.
         """
         if context_type not in self._registry:
             resolver = PathResolver(context_type, variables=self.variables)
@@ -280,7 +313,7 @@ class CompositeResolver(object):
         else:
             resolver = self._registry[context_type]
 
-        resolver.register(name, pattern)
+        resolver.register(name, pattern, base=base)
 
     def resolve(self, name: str, context: ContextT) -> Path:
         """
