@@ -141,7 +141,6 @@ import platform
 root = "V:/projects" if platform.system() == "Windows" else "/mnt/storage/projects"
 resolver = PathResolver(VFXContext, variables={"PROJECT_ROOT": root})
 
-# Use {variable} syntax in templates (different from <token> syntax)
 resolver.register("shot", "{PROJECT_ROOT}/shows/<show>/seq/<seq>/<shot>")
 
 # Variables are substituted when templates are registered
