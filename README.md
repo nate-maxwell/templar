@@ -208,10 +208,49 @@ Path inheritance JSON storing:
 }
 ```
 
+## Token Formatters
+
+Apply formatting to token values when building paths:
+```python
+@dataclass
+class VFXContext:
+    show: Optional[str] = None
+    seq: Optional[str] = None
+    shot: Optional[str] = None
+    version: Optional[str] = None
+
+resolver = PathResolver(VFXContext)
+
+# Padding - zero-pad numbers to fixed width
+resolver.register("padded", "V:/shows/<show>/seq/<seq:03>/<shot:04>/v<version:03>")
+ctx = VFXContext(show="demo", seq="5", shot="10", version="2")
+path = resolver.resolve("padded", ctx)
+# V:\shows\demo\seq\005\0010\v002
+
+# Case conversion
+resolver.register("uppercase", "V:/shows/<show:upper>/seq/<seq>")
+ctx = VFXContext(show="demo", seq="010")
+path = resolver.resolve("uppercase", ctx)
+# V:\shows\DEMO\seq\010
+
+# Default values - use fallback if token not provided
+resolver.register("with_default", "V:/shows/<show>/ep/<episode:default=pilot>")
+ctx = VFXContext(show="demo")  # No episode provided
+path = resolver.resolve("with_default", ctx)
+# V:\shows\demo\ep\pilot
+```
+
+**Available formatters:**
+- `<token:04>` - Zero-pad numbers to width (e.g., `5` → `0005`)
+- `<token:upper>` - Convert to uppercase
+- `<token:lower>` - Convert to lowercase
+- `<token:title>` - Title case
+- `<token:default=value>` - Use default if token not provided
+
 # Roadmap
 
 - [ ] Template Validation - Validate that a valid path can be made before creating it
 - [ ] Normalization - Auto-sanitize values (remove illegal chars, enforce naming conventions)
 - [x] Variable Syntax - Support `{variable}` syntax in addition to `<token>` syntax
-- [ ] Token formatters - `<seq:04>` -> "0010" instead of "10", `<show:upper>`, `<episode:default=pilot>`
+- [x] Token formatters - `<seq:04>` -> "0010" instead of "10", `<show:upper>`, `<episode:default=pilot>`
 - [x] Template chains / Inheritance - Base templates that other templates extend

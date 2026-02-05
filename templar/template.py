@@ -66,11 +66,12 @@ class PathTemplate(Generic[ContextT]):
     filled from a context dataclass.
 
     Tokens are denoted with angle brackets like <show> or <asset>.
+    Tokens can have formatters: <seq:04> for padding, <show:upper> for case conversion.
     The template extracts all token names on initialization and can validate
     whether a given context contains all required values before formatting.
     """
 
-    TOKEN_PATTERN = re.compile(r"<(\w+)>")
+    TOKEN_PATTERN = re.compile(r"<(\w+)(?::([^>]+))?>")
 
     def __init__(
         self, pattern: str, name: str = "", base: Optional["PathTemplate"] = None
@@ -85,8 +86,43 @@ class PathTemplate(Generic[ContextT]):
         self.tokens = self._extract_tokens()
 
     def _extract_tokens(self) -> set[str]:
-        """Extract all token names from pattern."""
-        return set(self.TOKEN_PATTERN.findall(self.pattern))
+        """Extract all token names from pattern (without formatters)."""
+        return set(match[0] for match in self.TOKEN_PATTERN.findall(self.pattern))
+
+    @staticmethod
+    def _apply_formatter(value: str, formatter: str) -> str:
+        """
+        Apply a formatter to a token value.
+
+        Supported formatters:
+            - Padding: 04, 03 (zero-pad to width)
+            - Case: upper, lower, title
+            - Default: default=value (use if token is None)
+
+        Args:
+            value (str): Token value to format.
+            formatter (str): Formatter specification.
+        Returns:
+            str: Formatted value.
+        """
+        if formatter.startswith("default="):
+            default_value = formatter[8:]  # Skip "default="
+            return value if value else default_value
+
+        if formatter.isdigit():
+            width = int(formatter)
+            if value.isdigit():
+                return value.zfill(width)
+            return value
+
+        if formatter == "upper":
+            return value.upper()
+        elif formatter == "lower":
+            return value.lower()
+        elif formatter == "title":
+            return value.title()
+
+        return value
 
     def format(self, context: ContextT) -> str:
         """
@@ -100,14 +136,29 @@ class PathTemplate(Generic[ContextT]):
             ValueError: If required tokens are missing from context.
         """
         context_dict = {k: v for k, v in asdict(context).items() if v is not None}
+        missing = set()
 
-        missing = self.tokens - set(context_dict.keys())
+        for token_name, formatter in self.TOKEN_PATTERN.findall(self.pattern):
+            if formatter and formatter.startswith("default="):
+                continue
+            if token_name not in context_dict:
+                missing.add(token_name)
+
         if missing:
             raise ValueError(f"Missing required tokens: {missing}")
 
         result = self.pattern
-        for token in self.tokens:
-            result = result.replace(f"<{token}>", str(context_dict[token]))
+
+        for match in self.TOKEN_PATTERN.finditer(self.pattern):
+            token_name = match.group(1)
+            formatter = match.group(2)
+            full_token = match.group(0)  # e.g., "<seq:04>"
+            value = context_dict.get(token_name, "")
+
+            if formatter:
+                value = self._apply_formatter(value, formatter)
+
+            result = result.replace(full_token, str(value))
 
         return result
 
@@ -121,7 +172,14 @@ class PathTemplate(Generic[ContextT]):
             bool: True if all tokens present.
         """
         context_dict = {k: v for k, v in asdict(context).items() if v is not None}
-        return self.tokens.issubset(set(context_dict.keys()))
+
+        for token_name, formatter in self.TOKEN_PATTERN.findall(self.pattern):
+            if formatter and formatter.startswith("default="):
+                continue  # Tokens with defaults are always satisfied
+            if token_name not in context_dict:
+                return False
+
+        return True
 
 
 class PathResolver(Generic[ContextT]):
@@ -256,15 +314,17 @@ class PathResolver(Generic[ContextT]):
         Args:
             path (Path): File path to parse.
         Returns:
-            ContextT: Context with extracted values, or None if no
-                template matches.
+            ContextT: Context with extracted values, or None if no template
+                matches.
         """
         path_str = path.as_posix()
 
         for template in self.templates.values():
             pattern = template.pattern.replace("\\", "/")
             pattern = re.escape(pattern)
-            pattern = re.sub(r"<(\w+)>", r"(?P<\1>[^/]+)", pattern)
+
+            # Strip formatters before creating regex - match <token> or <token:formatter>
+            pattern = re.sub(r"<(\w+)(?::[^>]+)?>", r"(?P<\1>[^/]+)", pattern)
             pattern = f"^{pattern}$"
 
             if not (match := re.match(pattern, path_str)):
