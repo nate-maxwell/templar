@@ -51,6 +51,7 @@ import json
 import re
 from dataclasses import asdict
 from pathlib import Path
+from typing import Callable
 from typing import Generic
 from typing import Optional
 from typing import TypeVar
@@ -74,7 +75,11 @@ class PathTemplate(Generic[ContextT]):
     TOKEN_PATTERN = re.compile(r"<(\w+)(?::([^>]+))?>")
 
     def __init__(
-        self, pattern: str, name: str = "", base: Optional["PathTemplate"] = None
+        self,
+        pattern: str,
+        name: str = "",
+        base: Optional["PathTemplate"] = None,
+        normalizers: dict[str, Callable[[str], str]] = None,
     ) -> None:
         if base:
             self.pattern = f"{base.pattern}/{pattern}"
@@ -83,6 +88,7 @@ class PathTemplate(Generic[ContextT]):
 
         self.name = name
         self.base = base
+        self.normalizers = normalizers or {}
         self.tokens = self._extract_tokens()
 
     def _extract_tokens(self) -> set[str]:
@@ -106,7 +112,7 @@ class PathTemplate(Generic[ContextT]):
             str: Formatted value.
         """
         if formatter.startswith("default="):
-            default_value = formatter[8:]  # Skip "default="
+            default_value = formatter[len("default=") :]
             return value if value else default_value
 
         if formatter.isdigit():
@@ -155,6 +161,8 @@ class PathTemplate(Generic[ContextT]):
             full_token = match.group(0)  # e.g., "<seq:04>"
             value = context_dict.get(token_name, "")
 
+            if token_name in self.normalizers:
+                value = self.normalizers[token_name](value)
             if formatter:
                 value = self._apply_formatter(value, formatter)
 
@@ -195,11 +203,15 @@ class PathResolver(Generic[ContextT]):
     """
 
     def __init__(
-        self, context_type: type[ContextT], variables: dict[str, str] = None
+        self,
+        context_type: type[ContextT],
+        variables: dict[str, str] = None,
+        normalizers: dict[str, Callable[[str], str]] = None,
     ) -> None:
         self.templates: dict[str, PathTemplate[ContextT]] = {}
         self.context_type = context_type
         self.variables = variables or {}
+        self.normalizers = normalizers or {}
 
     def register(self, name: str, pattern: str, base: Optional[str] = None) -> None:
         """
@@ -221,7 +233,7 @@ class PathResolver(Generic[ContextT]):
             base_template = self.templates[base]
 
         self.templates[name] = PathTemplate[ContextT](
-            resolved_pattern, name, base=base_template
+            resolved_pattern, name, base=base_template, normalizers=self.normalizers
         )
 
     def load_from_json(self, json_path: Path) -> None:
@@ -345,9 +357,14 @@ class CompositeResolver(object):
     operations to the appropriate resolver based on context type.
     """
 
-    def __init__(self, variables: dict[str, str] = None) -> None:
+    def __init__(
+        self,
+        variables: dict[str, str] = None,
+        normalizers: dict[str, Callable[[str], str]] = None,
+    ) -> None:
         self._registry: dict[type, PathResolver] = {}
         self.variables = variables or {}
+        self.normalizers = normalizers or {}
 
     def register(
         self,
@@ -356,19 +373,10 @@ class CompositeResolver(object):
         pattern: str,
         base: Optional[str] = None,
     ) -> None:
-        """
-        Register a path template for a specific context type.
-        Creates a new PathResolver for the context type if one doesn't exist.
-
-        Args:
-            context_type (type[ContextT]): Dataclass type for this template.
-            name (str): Template identifier.
-            pattern (str): Path pattern with <token> placeholders and {variable}
-                substitutions.
-            base (str): Optional name of base template to extend.
-        """
         if context_type not in self._registry:
-            resolver = PathResolver(context_type, variables=self.variables)
+            resolver = PathResolver(
+                context_type, variables=self.variables, normalizers=self.normalizers
+            )
             self._registry[context_type] = resolver
         else:
             resolver = self._registry[context_type]

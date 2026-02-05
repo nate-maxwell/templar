@@ -247,10 +247,70 @@ path = resolver.resolve("with_default", ctx)
 - `<token:title>` - Title case
 - `<token:default=value>` - Use default if token not provided
 
-# Roadmap
+## Normalizers
 
-- [ ] Template Validation - Validate that a valid path can be made before creating it
-- [ ] Normalization - Auto-sanitize values (remove illegal chars, enforce naming conventions)
-- [x] Variable Syntax - Support `{variable}` syntax in addition to `<token>` syntax
-- [x] Token formatters - `<seq:04>` -> "0010" instead of "10", `<show:upper>`, `<episode:default=pilot>`
-- [x] Template chains / Inheritance - Base templates that other templates extend
+Automatically sanitize token values to ensure valid paths:
+```python
+# Define normalizer functions
+def spaces_to_underscores(value: str) -> str:
+    return value.replace(" ", "_")
+
+def remove_illegal_chars(value: str) -> str:
+    return re.sub(r'[<>:"|?*\x00-\x1f]', '', value)
+
+def safe_filename(value: str) -> str:
+    value = re.sub(r'[<>:"|?*\x00-\x1f]', '', value)
+    value = value.replace(" ", "_")
+    return value.strip("._")
+
+@dataclass
+class VFXContext:
+    show: Optional[str] = None
+    seq: Optional[str] = None
+    shot: Optional[str] = None
+    task: Optional[str] = None
+
+# Register normalizers per token
+normalizers = {
+    "show": spaces_to_underscores,
+    "shot": safe_filename,
+    "task": lambda v: re.sub(r'[^\w]', '', v)  # Alphanumeric only
+}
+
+resolver = PathResolver(VFXContext, normalizers=normalizers)
+resolver.register("shot", "V:/shows/<show>/seq/<seq>/<shot>/work/<task>")
+
+# Values are automatically sanitized
+ctx = VFXContext(
+    show="My Cool Show",        # Becomes: My_Cool_Show
+    seq="010",
+    shot="shot: with colons",   # Becomes: shot_with_colons
+    task="anim-final"           # Becomes: animfinal
+)
+
+path = resolver.resolve("shot", ctx)
+print(path)
+# V:\shows\My_Cool_Show\seq\010\shot_with_colons\work\animfinal
+```
+
+**Normalizers run before formatters:**
+```python
+normalizers = {"show": spaces_to_underscores}
+resolver = PathResolver(VFXContext, normalizers=normalizers)
+resolver.register("shot", "V:/shows/<show:upper>/seq/<seq:03>")
+
+ctx = VFXContext(show="my show", seq="5")
+path = resolver.resolve("shot", ctx)
+# V:\shows\MY_SHOW\seq\005
+# (normalized to my_show, then uppercased to MY_SHOW, seq padded to 005)
+```
+
+Works with `CompositeResolver` - normalizers apply to all registered context types:
+```python
+normalizers = {"show": spaces_to_underscores, "asset": safe_filename}
+composite = CompositeResolver(normalizers=normalizers)
+
+composite.register(ShotContext, "shot", "V:/shows/<show>")
+composite.register(AssetContext, "asset", "V:/assets/<asset>")
+# Both contexts use the same normalizers
+```
