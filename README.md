@@ -10,6 +10,7 @@ A lightweight, type-safe path templating system for building and parsing file pa
 - **Token formatters**: Padding, case conversion, and default values
 - **Normalizers**: Auto-sanitize values for valid paths
 - **Variables**: Cross-platform path roots and reusable substitutions
+- **Validation**: Check if context has all required tokens before building paths
 - **JSON configuration**: Load templates from external files
 
 ## Quick Start
@@ -88,6 +89,27 @@ resolver = PathResolver(VFXContext, normalizers=normalizers)
 ctx = VFXContext(show="My Show", seq="010")
 path = resolver.resolve("shot", ctx)
 # V:\shows\My_Show\seq\010
+```
+
+## Validation
+
+Check if a context has all required tokens before building paths:
+```python
+resolver.register("shot", "V:/shows/<show>/seq/<seq>/<shot>")
+
+ctx = VFXContext(show="demo", seq="010")
+is_valid, missing = resolver.validate("shot", ctx)
+
+if is_valid:
+    path = resolver.resolve("shot", ctx)
+else:
+    print(f"Missing tokens: {missing}")  # ['shot']
+
+# Tokens with defaults are always valid
+resolver.register("with_default", "V:/shows/<show>/ep/<episode:default=pilot>")
+ctx = VFXContext(show="demo")
+is_valid, missing = resolver.validate("with_default", ctx)
+# is_valid=True, missing=[]
 ```
 
 ## CompositeResolver

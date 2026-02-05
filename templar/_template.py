@@ -189,6 +189,26 @@ class PathTemplate(Generic[ContextT]):
 
         return True
 
+    def validate(self, context: ContextT) -> tuple[bool, list[str]]:
+        """
+        Validate that context has all required tokens to format this template.
+
+        Args:
+            context (ContextT): Context to validate.
+        Returns:
+            tuple[bool, list[str]]: (is_valid, list of missing token names)
+        """
+        context_dict = {k: v for k, v in asdict(context).items() if v is not None}
+        missing = []
+
+        for token_name, formatter in self.TOKEN_PATTERN.findall(self.pattern):
+            if formatter and formatter.startswith("default="):
+                continue
+            if token_name not in context_dict:
+                missing.append(token_name)
+
+        return len(missing) == 0, missing
+
 
 class PathResolver(Generic[ContextT]):
     """
@@ -314,6 +334,23 @@ class PathResolver(Generic[ContextT]):
             for name, template in self.templates.items()
             if template.can_format(context)
         ]
+
+    def validate(self, name: str, context: ContextT) -> tuple[bool, list[str]]:
+        """
+        Validate that context has all required tokens for a template.
+
+        Args:
+            name (str): Template name.
+            context (ContextT): Context to validate.
+        Returns:
+            tuple[bool, list[str]]: (is_valid, list of missing token names)
+        Raises:
+            KeyError: If template not found.
+        """
+        if name not in self.templates:
+            raise KeyError(f"Template '{name}' not registered")
+
+        return self.templates[name].validate(context)
 
     def parse_path(self, path: Path) -> Optional[ContextT]:
         """
