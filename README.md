@@ -30,13 +30,13 @@ resolver = PathResolver(VFXContext)
 resolver.register("shot", "V:/shows/<show>/seq/<seq>/<shot>/__pub__/<dcc>")
 
 # Build paths
-ctx = VFXContext(show="demo", seq="010", shot="0010", dcc="maya")
+ctx = VFXContext(show="demo", seq="DEF", shot="0010", dcc="maya")
 path = resolver.resolve("shot", ctx)
-# V:\shows\demo\seq\010\0010\__pub__\maya
+# V:\shows\demo\seq\DEF\0010\__pub__\maya
 
 # Parse paths
 ctx = resolver.parse_path(path)
-# VFXContext(show='demo', seq='010', shot='0010', dcc='maya')
+# VFXContext(show='demo', seq='DEF', shot='0010', dcc='maya')
 ```
 
 ## Variables
@@ -58,9 +58,9 @@ resolver.register("show_base", "V:/shows/<show>")
 resolver.register("seq_base", "seq/<seq>", base="show_base")
 resolver.register("shot", "<shot>/work", base="seq_base")
 
-ctx = VFXContext(show="demo", seq="010", shot="0010")
+ctx = VFXContext(show="demo", seq="DEF", shot="0010")
 path = resolver.resolve("shot", ctx)
-# V:\shows\demo\seq\010\0010\work
+# V:\shows\demo\seq\DEF\0010\work
 ```
 
 ## Token Formatters
@@ -68,10 +68,10 @@ path = resolver.resolve("shot", ctx)
 Format values during path generation:
 ```python
 # Padding, case conversion, defaults
-resolver.register("formatted", "V:/shows/<show:upper>/seq/<seq:03>/v<version:03>")
-ctx = VFXContext(show="demo", seq="5", version="2")
+resolver.register("formatted", "V:/shows/<show:upper>/seq/<seq>/v<version:03>")
+ctx = VFXContext(show="demo", seq="DEF", version="2")
 path = resolver.resolve("formatted", ctx)
-# V:\shows\DEMO\seq\005\v002
+# V:\shows\DEMO\seq\DEF\v002
 
 # Available: :04 (padding), :upper, :lower, :title, :default=value
 ```
@@ -86,9 +86,9 @@ def spaces_to_underscores(value: str) -> str:
 normalizers = {"show": spaces_to_underscores}
 resolver = PathResolver(VFXContext, normalizers=normalizers)
 
-ctx = VFXContext(show="My Show", seq="010")
+ctx = VFXContext(show="My Show", seq="DEF")
 path = resolver.resolve("shot", ctx)
-# V:\shows\My_Show\seq\010
+# V:\shows\My_Show\seq\DEF
 ```
 
 ## Validation
@@ -97,7 +97,7 @@ Check if a context has all required tokens before building paths:
 ```python
 resolver.register("shot", "V:/shows/<show>/seq/<seq>/<shot>")
 
-ctx = VFXContext(show="demo", seq="010")
+ctx = VFXContext(show="demo", seq="DEF")
 is_valid, missing = resolver.validate("shot", ctx)
 
 if is_valid:
@@ -122,7 +122,7 @@ composite = CompositeResolver()
 composite.register(ShotContext, "shot", "V:/shows/<show>/seq/<seq>/<shot>")
 composite.register(AssetContext, "asset", "V:/assets/<category>/<asset>")
 
-shot_ctx = ShotContext(show="demo", seq="010", shot="0010")
+shot_ctx = ShotContext(show="demo", seq="DEF", shot="0010")
 asset_ctx = AssetContext(category="props", asset="table")
 
 shot_path = composite.resolve("shot", shot_ctx)
