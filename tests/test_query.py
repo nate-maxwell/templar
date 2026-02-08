@@ -162,7 +162,7 @@ class TestFindAssets(object):
             resolver.register("shot", "shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, Path(tmpdir))
 
-            results = list(query.file_paths())
+            results = list(query.query())
             assert results == []
 
     def test_find_assets_no_matching_templates(self) -> None:
@@ -176,7 +176,7 @@ class TestFindAssets(object):
             resolver.register("shot", "shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, root)
 
-            results = list(query.file_paths())
+            results = list(query.query())
             assert results == []
 
     def test_find_assets_single_match(self) -> None:
@@ -190,7 +190,7 @@ class TestFindAssets(object):
             resolver.register("shot", f"{root}/shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, root)
 
-            results = list(query.file_paths())
+            results = list(query.query())
             assert len(results) == 1
             assert results[0].show == "demo"
             assert results[0].seq == "010"
@@ -208,7 +208,7 @@ class TestFindAssets(object):
             resolver.register("shot", f"{root}/shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, root)
 
-            results = list(query.file_paths())
+            results = list(query.query())
             assert len(results) == 3
 
     def test_find_assets_with_show_filter(self) -> None:
@@ -222,7 +222,7 @@ class TestFindAssets(object):
             resolver.register("shot", f"{root}/shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, root)
 
-            results = list(query.file_paths(show="demo"))
+            results = list(query.query(show="demo"))
             assert len(results) == 1
             assert results[0].show == "demo"
 
@@ -238,7 +238,7 @@ class TestFindAssets(object):
             resolver.register("shot", f"{root}/shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, root)
 
-            results = list(query.file_paths(show="demo", seq="010"))
+            results = list(query.query(show="demo", seq="010"))
             assert len(results) == 2
             assert all(r.show == "demo" and r.seq == "010" for r in results)
 
@@ -252,7 +252,7 @@ class TestFindAssets(object):
             resolver.register("shot", f"{root}/shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, root)
 
-            results = list(query.file_paths(show="nonexistent"))
+            results = list(query.query(show="nonexistent"))
             assert results == []
 
     def test_find_assets_partial_path_no_match(self) -> None:
@@ -266,7 +266,7 @@ class TestFindAssets(object):
             resolver.register("shot", f"{root}/shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, root)
 
-            results = list(query.file_paths())
+            results = list(query.query())
             assert results == []
 
     def test_find_assets_mixed_matching_nonmatching(self) -> None:
@@ -281,7 +281,7 @@ class TestFindAssets(object):
             resolver.register("shot", f"{root}/shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, root)
 
-            results = list(query.file_paths())
+            results = list(query.query())
             assert len(results) == 1
             assert results[0].shot == "0010"
 
@@ -297,7 +297,7 @@ class TestFindAssets(object):
             resolver.register("shot", f"{root}/shows/<show>/seq/<seq>/<shot>")
             query = Query(resolver, root)
 
-            results = list(query.file_paths())
+            results = list(query.query())
             # Should match both the directory and file paths
             assert len(results) >= 1
             assert any(r.shot == "0010" for r in results)
@@ -318,7 +318,7 @@ class TestFindAssets(object):
             )
             query = Query(resolver, root)
 
-            results = list(query.file_paths())
+            results = list(query.query())
             assert len(results) == 2
 
 
@@ -342,15 +342,15 @@ class TestFindAssetsIntegration(object):
             query = Query(resolver, root)
 
             # Find all shots for show "demo"
-            results = list(query.file_paths(show="demo"))
+            results = list(query.query(show="demo"))
             assert len(results) == 4
 
             # Find specific sequence
-            results = list(query.file_paths(show="demo", seq="010"))
+            results = list(query.query(show="demo", seq="010"))
             assert len(results) == 2
 
             # Find specific shot
-            results = list(query.file_paths(show="demo", seq="010", shot="0010"))
+            results = list(query.query(show="demo", seq="010", shot="0010"))
             assert len(results) == 1
 
     def test_asset_library_structure(self) -> None:
@@ -372,9 +372,9 @@ class TestFindAssetsIntegration(object):
             query = Query(resolver, root)
 
             # Find all characters
-            results = list(query.file_paths(asset_type="chars"))
+            results = list(query.query(asset_type="chars"))
             assert len(results) == 4
 
             # Find specific project assets
-            results = list(query.file_paths(project="film1"))
+            results = list(query.query(project="film1"))
             assert len(results) == 6

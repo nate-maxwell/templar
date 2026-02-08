@@ -19,7 +19,7 @@ class Query(object):
         self.resolver = resolver
         self.root = root
 
-    def file_paths(self, **filters) -> Iterator[ContextT]:
+    def query(self, **filters) -> Iterator[ContextT]:
         """Find paths matching criteria."""
         for path in self._walk_paths():
             ctx = self.resolver.parse_path(path)
