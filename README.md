@@ -133,6 +133,7 @@ asset_path = composite.resolve("asset", asset_ctx)
 ## Query
 
 Find existing files on disk that match your templates:
+
 ```python
 from pathlib import Path
 from templar import PathResolver, Query
@@ -144,20 +145,20 @@ resolver.register("shot", "V:/shows/<show>/seq/<seq>/<shot>")
 query = Query(resolver, Path("V:/shows"))
 
 # Find all shots in a specific show
-for ctx in query.find_assets(show="demo"):
+for ctx in query.file_paths(show="demo"):
     print(f"{ctx.show}/{ctx.seq}/{ctx.shot}")
 # demo/DEF/0010
 # demo/DEF/0020
 # demo/DEF/0030
 
 # Find shots matching multiple criteria
-for ctx in query.find_assets(show="demo", seq="DEF"):
+for ctx in query.file_paths(show="demo", seq="DEF"):
     print(f"{ctx.shot}")
 # 0010
 # 0020
 
 # Find all shots (no filters)
-for ctx in query.find_assets():
+for ctx in query.file_paths():
     print(f"{ctx.show}/{ctx.seq}/{ctx.shot}")
 ```
 
