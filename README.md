@@ -11,7 +11,7 @@ A lightweight, type-safe path templating system for building and parsing file pa
 - **Normalizers**: Auto-sanitize values for valid paths
 - **Variables**: Cross-platform path roots and reusable substitutions
 - **Validation**: Check if context has all required tokens before building paths
-- **Queryable**: Finds all paths matching a criteria and creates a dataclass from them
+- **Queryable**: Finds all paths matching criteria and creates a dataclass from them
 - **JSON configuration**: Load templates from external files
 
 ## Quick Start
