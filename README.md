@@ -11,6 +11,7 @@ A lightweight, type-safe path templating system for building and parsing file pa
 - **Normalizers**: Auto-sanitize values for valid paths
 - **Variables**: Cross-platform path roots and reusable substitutions
 - **Validation**: Check if context has all required tokens before building paths
+- **Queryable**: Finds all paths matching a criteria and creates a dataclass from them
 - **JSON configuration**: Load templates from external files
 
 ## Quick Start
@@ -127,6 +128,37 @@ asset_ctx = AssetContext(category="props", asset="table")
 
 shot_path = composite.resolve("shot", shot_ctx)
 asset_path = composite.resolve("asset", asset_ctx)
+```
+
+## Query
+
+Find existing files on disk that match your templates:
+```python
+from pathlib import Path
+from templar import PathResolver, Query
+
+resolver = PathResolver(VFXContext)
+resolver.register("shot", "V:/shows/<show>/seq/<seq>/<shot>")
+
+# Search a directory tree for all shots
+query = Query(resolver, Path("V:/shows"))
+
+# Find all shots in a specific show
+for ctx in query.find_assets(show="demo"):
+    print(f"{ctx.show}/{ctx.seq}/{ctx.shot}")
+# demo/DEF/0010
+# demo/DEF/0020
+# demo/DEF/0030
+
+# Find shots matching multiple criteria
+for ctx in query.find_assets(show="demo", seq="DEF"):
+    print(f"{ctx.shot}")
+# 0010
+# 0020
+
+# Find all shots (no filters)
+for ctx in query.find_assets():
+    print(f"{ctx.show}/{ctx.seq}/{ctx.shot}")
 ```
 
 ## JSON Configuration
