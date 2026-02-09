@@ -479,3 +479,19 @@ class CompositeResolver(object):
             )
         resolver = self._registry[context_type]
         return resolver.parse_path(path)
+
+    def get_resolver_for(self, context_type: type[ContextT]) -> PathResolver:
+        """
+        Returns the specific path resolver the composite resolver is using for
+        the given dataclass type.
+
+        Args:
+            context_type (type[ContextT]): The dataclass type to get the tracked
+                path resolver for.
+        Returns:
+            PathResolver: The requested path resolver.
+        """
+        if context_type in self._registry:
+            return self._registry[context_type]
+        else:
+            raise ValueError(f"{context_type} is not registered in CompositeResolver.")
