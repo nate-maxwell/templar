@@ -35,6 +35,9 @@ ctx = VFXContext(show="demo", seq="DEF", shot="0010", dcc="maya")
 path = resolver.resolve("shot", ctx)
 # V:\shows\demo\seq\DEF\0010\__pub__\maya
 
+# Resolve any of multiple templates
+path = resolver.resolve_any(ctx, ["shot_feature", "shot_episodic"])
+
 # Parse paths
 ctx = resolver.parse_path(path)
 # VFXContext(show='demo', seq='DEF', shot='0010', dcc='maya')
@@ -162,7 +165,74 @@ for ctx in query.query():
     print(f"{ctx.show}/{ctx.seq}/{ctx.shot}")
 ```
 
+Templar provides three caching strategies for improved query performance:
+
+### CachedQuery - Simple Full Caching
+
+Caches all results for fast repeated queries.
+```python
+from templar import CachedQuery
+
+query = CachedQuery(resolver, Path("V:/shows"), cache_timeout=300.0)
+
+# First query - scans filesystem
+for ctx in query.query(show="demo"):
+    print(ctx.shot)
+
+# Second query - uses cache (instant)
+for ctx in query.query(show="demo"):
+    print(ctx.shot)
+
+# Manual invalidation
+query.invalidate_cache()
+```
+
+### TwoTierCachedQuery - Separate Path/Parse Caching
+
+Caches filesystem scanning and parsing separately for memory efficiency.
+```python
+from templar import TwoTierCachedQuery
+
+query = TwoTierCachedQuery(
+    resolver, 
+    Path("V:/shows"),
+    path_cache_timeout=600.0,    # Filesystem scan cache
+    parse_cache_timeout=60.0     # Parse results cache
+)
+
+# Invalidate only parsing (keeps filesystem scan)
+query.invalidate_parse_cache()
+
+# Invalidate only paths
+query.invalidate_path_cache()
+
+# Invalidate both
+query.invalidate_all()
+```
+
+### LazyQuery - Selective Caching
+
+Only caches specific filter combinations that have been queried.
+```python
+from templar import LazyQuery
+
+query = LazyQuery(resolver, Path("V:/shows"))
+
+# Each unique filter combination caches separately
+list(query.query(show="demo"))            # Caches: show="demo"
+list(query.query(show="demo", seq="ABC")) # Caches: show="demo" + seq="ABC"
+
+# Invalidate specific filter combination
+query.invalidate_cache(show="demo")
+
+# Invalidate all
+query.invalidate_all()
+```
+
 ## JSON Configuration
+
+Templates can be stored in a JSON file like so:
+
 ```json
 {
   "show_base": "V:/shows/<show>",

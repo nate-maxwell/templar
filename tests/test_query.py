@@ -57,44 +57,44 @@ class TestMatchesFilters(object):
     def test_empty_filters_returns_true(self) -> None:
         """Empty filters match any context."""
         ctx = VFXContext(show="demo", seq="010")
-        assert Query._matches_filters(ctx, {}) is True
+        assert Query.matches_filters(ctx, {}) is True
 
     def test_single_matching_filter(self) -> None:
         """Single filter matches when attribute equals value."""
         ctx = VFXContext(show="demo", seq="010")
-        assert Query._matches_filters(ctx, {"show": "demo"}) is True
+        assert Query.matches_filters(ctx, {"show": "demo"}) is True
 
     def test_single_non_matching_filter(self) -> None:
         """Single filter fails when attribute doesn't equal value."""
         ctx = VFXContext(show="demo", seq="010")
-        assert Query._matches_filters(ctx, {"show": "other"}) is False
+        assert Query.matches_filters(ctx, {"show": "other"}) is False
 
     def test_multiple_matching_filters(self) -> None:
         """Multiple filters match when all attributes equal values."""
         ctx = VFXContext(show="demo", seq="010", shot="0010")
         filters = {"show": "demo", "seq": "010"}
-        assert Query._matches_filters(ctx, filters) is True
+        assert Query.matches_filters(ctx, filters) is True
 
     def test_multiple_filters_partial_match(self) -> None:
         """Multiple filters fail when any attribute doesn't match."""
         ctx = VFXContext(show="demo", seq="010", shot="0010")
         filters = {"show": "demo", "seq": "020"}
-        assert Query._matches_filters(ctx, filters) is False
+        assert Query.matches_filters(ctx, filters) is False
 
     def test_filter_on_none_attribute(self) -> None:
         """Filter fails when checking against None attribute."""
         ctx = VFXContext(show="demo", seq=None)
-        assert Query._matches_filters(ctx, {"seq": "010"}) is False
+        assert Query.matches_filters(ctx, {"seq": "010"}) is False
 
     def test_filter_for_none_value(self) -> None:
         """Filter matches when checking for None explicitly."""
         ctx = VFXContext(show="demo", seq=None)
-        assert Query._matches_filters(ctx, {"seq": None}) is True
+        assert Query.matches_filters(ctx, {"seq": None}) is True
 
     def test_filter_nonexistent_attribute(self) -> None:
         """Filter fails gracefully on non-existent attribute."""
         ctx = VFXContext(show="demo")
-        assert Query._matches_filters(ctx, {"nonexistent": "value"}) is False
+        assert Query.matches_filters(ctx, {"nonexistent": "value"}) is False
 
 
 class TestWalkPaths(object):
@@ -105,7 +105,7 @@ class TestWalkPaths(object):
         with TemporaryDirectory() as tmpdir:
             resolver = PathResolver(VFXContext)
             query = Query(resolver, Path(tmpdir))
-            paths = list(query._walk_paths())
+            paths = list(query.walk_paths())
             assert paths == []
 
     def test_walk_single_file(self) -> None:
@@ -116,7 +116,7 @@ class TestWalkPaths(object):
 
             resolver = PathResolver(VFXContext)
             query = Query(resolver, Path(tmpdir))
-            paths = list(query._walk_paths())
+            paths = list(query.walk_paths())
 
             assert len(paths) == 1
             assert paths[0] == test_file
@@ -132,7 +132,7 @@ class TestWalkPaths(object):
 
             resolver = PathResolver(VFXContext)
             query = Query(resolver, root)
-            paths = list(query._walk_paths())
+            paths = list(query.walk_paths())
 
             assert len(paths) == 4  # 2 directories + 2 files
 
@@ -146,7 +146,7 @@ class TestWalkPaths(object):
 
             resolver = PathResolver(VFXContext)
             query = Query(resolver, root)
-            paths = list(query._walk_paths())
+            paths = list(query.walk_paths())
 
             assert subdir in paths
             assert subdir / "file.txt" in paths
