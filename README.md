@@ -256,7 +256,7 @@ resolver.register_token_values('status', ['work', 'publish'])
 
 # Create all combinations
 ctx = AssetContext(project='demo', category='char', asset='skeleton_king')
-paths = resolver.create_structure('asset', ctx, stop_at_token='task')
+paths = resolver.create_structure('asset', ctx)
 
 # T:/projects/demo/assets/char/skeleton_king/anim/publish
 # T:/projects/demo/assets/char/skeleton_king/anim/work
