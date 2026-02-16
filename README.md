@@ -251,12 +251,11 @@ resolver.register(
 )
 
 # Register all possible values for tokens
-resolver.register_token_values('category', ['char', 'prop', 'env'])
 resolver.register_token_values('dept', ['model', 'rig', 'anim'])
 resolver.register_token_values('status', ['work', 'publish'])
 
 # Create all combinations
-ctx = AssetContext(project='demo', asset='skeleton_king', category='char')
+ctx = AssetContext(project='demo', category='char', asset='skeleton_king')
 paths = resolver.create_structure('asset', ctx, stop_at_token='task')
 
 # T:/projects/demo/assets/char/skeleton_king/anim/publish
