@@ -259,9 +259,9 @@ ctx = AssetContext(project='demo', category='char', asset='skeleton_king')
 paths = resolver.create_structure('asset', ctx, stop_at_token='status')
 
 # Creates 3 directories (stops before 'status'):
-# T:/projects/demo/assets/char/hero_sword/model
-# T:/projects/demo/assets/char/hero_sword/rig
-# T:/projects/demo/assets/char/hero_sword/surfacing
+# T:/projects/demo/assets/char/skeleton_king/model
+# T:/projects/demo/assets/char/skeleton_king/rig
+# T:/projects/demo/assets/char/skeleton_king/surfacing
 
 # Dry run to preview without creating
 paths = resolver.create_structure('asset', ctx, dry_run=True)
