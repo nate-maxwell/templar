@@ -251,6 +251,7 @@ resolver.register(
 )
 
 # Register all possible values for tokens
+resolver.register_token_values('category', ['char', 'prop', 'env'])
 resolver.register_token_values('dept', ['model', 'rig', 'anim'])
 resolver.register_token_values('status', ['work', 'publish'])
 
