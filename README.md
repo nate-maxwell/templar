@@ -256,14 +256,12 @@ resolver.register_token_values('status', ['work', 'publish'])
 
 # Create all combinations
 ctx = AssetContext(project='demo', category='char', asset='skeleton_king')
-paths = resolver.create_structure('asset', ctx)
+paths = resolver.create_structure('asset', ctx, stop_at_token='task')
 
-# T:/projects/demo/assets/char/skeleton_king/anim/publish
-# T:/projects/demo/assets/char/skeleton_king/anim/work
-# T:/projects/demo/assets/char/skeleton_king/model/publish
-# T:/projects/demo/assets/char/skeleton_king/model/work
-# T:/projects/demo/assets/char/skeleton_king/rig/publish
-# T:/projects/demo/assets/char/skeleton_king/rig/work
+# Creates 3 directories (stops before 'task'):
+# T:/projects/demo/assets/char/hero_sword/model
+# T:/projects/demo/assets/char/hero_sword/rig
+# T:/projects/demo/assets/char/hero_sword/surfacing
 
 # Dry run to preview without creating
 paths = resolver.create_structure('asset', ctx, dry_run=True)
