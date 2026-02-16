@@ -124,7 +124,7 @@ from templar import CompositeResolver
 
 composite = CompositeResolver()
 composite.register(ShotContext, "shot", "V:/shows/<show>/seq/<seq>/<shot>")
-composite.register(AssetContext, "asset", "V:/assets/<category>/<asset>")
+composite.register(AssetContext, "asset", "V:/shows/<show>/asset/<category>/<asset>")
 
 shot_ctx = ShotContext(show="demo", seq="DEF", shot="0010")
 asset_ctx = AssetContext(category="props", asset="table")
