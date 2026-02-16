@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -174,18 +173,14 @@ class TestPathResolver:
 
         assert original == reconstructed
 
-    def test_load_from_json(self, tmp_path: Path) -> None:
-        json_file = tmp_path / "templates.json"
+    def test_load_from_dict(self) -> None:
         templates = {
             "shot": "V:/shows/<show>/seq/<seq>/<shot>",
             "asset": "V:/shows/<show>/asset/<asset>",
         }
 
-        with open(json_file, "w") as f:
-            json.dump(templates, f)
-
         resolver = PathResolver(ExampleContext)
-        resolver.load_from_json(json_file)
+        resolver.from_dict(templates)
 
         assert "shot" in resolver.templates
         assert "asset" in resolver.templates

@@ -229,12 +229,55 @@ query.invalidate_cache(show="demo")
 query.invalidate_all()
 ```
 
-## JSON Configuration
+## Structure Generation
 
-Templates can be stored in a JSON file like so:
+Create entire directory structures by expanding registered token values:
 
-```json
-{
+```python
+from templar import PathResolver
+
+@dataclass
+class AssetContext:
+    project: Optional[str] = None
+    category: Optional[str] = None
+    asset: Optional[str] = None
+    dept: Optional[str] = None
+    status: Optional[str] = None
+
+resolver = PathResolver(AssetContext)
+resolver.register(
+    "asset",
+    "T:/projects/<project>/assets/<category>/<asset>/<dept>/<status>"
+)
+
+# Register all possible values for tokens
+resolver.register_token_values('category', ['char', 'prop', 'env'])
+resolver.register_token_values('dept', ['model', 'rig', 'anim'])
+resolver.register_token_values('status', ['work', 'publish'])
+
+# Create all combinations
+ctx = AssetContext(project='demo', asset='skeleton_king', category='char')
+paths = resolver.create_structure('asset', ctx, stop_at_token='task')
+
+# T:/projects/demo/assets/char/skeleton_king/anim/publish
+# T:/projects/demo/assets/char/skeleton_king/anim/work
+# T:/projects/demo/assets/char/skeleton_king/model/publish
+# T:/projects/demo/assets/char/skeleton_king/model/work
+# T:/projects/demo/assets/char/skeleton_king/rig/publish
+# T:/projects/demo/assets/char/skeleton_king/rig/work
+
+# Dry run to preview without creating
+paths = resolver.create_structure('asset', ctx, dry_run=True)
+```
+
+The `stop_at_token` parameter controls expansion depth - only tokens **before** it are expanded. Tokens already populated in the context are skipped.
+
+## Dict Configuration
+
+Templates can be loaded from a dict formatted like so:
+
+```python
+data = {
   "show_base": "V:/shows/<show>",
   "seq_base": {
     "pattern": "seq/<seq>",
@@ -245,7 +288,6 @@ Templates can be stored in a JSON file like so:
     "base": "seq_base"
   }
 }
-```
-```python
-resolver.load_from_json(Path("templates.json"))
+
+resolver.from_dict(data)
 ```

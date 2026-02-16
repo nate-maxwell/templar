@@ -231,6 +231,7 @@ class PathResolver(Generic[ContextT]):
         self.context_type = context_type
         self.variables = variables or {}
         self.normalizers = normalizers or {}
+        self._token_values: dict[str, list[str]] = {}
 
     def register(self, name: str, pattern: str, base: Optional[str] = None) -> None:
         """
@@ -255,14 +256,14 @@ class PathResolver(Generic[ContextT]):
             resolved_pattern, name, base=base_template, normalizers=self.normalizers
         )
 
-    def load_from_json(self, json_path: Path) -> None:
+    def from_dict(self, data: dict) -> None:
         """
-        Load templates from a JSON file.
+        Load templates from a dictionary.
 
         Args:
-            json_path (Path): Path to JSON file containing templates.
+            data (dict): The dictionary to load from.
 
-        The JSON file should have the format:
+        The dict file should have the format:
         {
             "template_name": "pattern/with/<tokens>",
             "another_template": {
@@ -271,10 +272,7 @@ class PathResolver(Generic[ContextT]):
             }
         }
         """
-        with open(json_path, "r") as f:
-            templates_data = json.load(f)
-
-        for name, value in templates_data.items():
+        for name, value in data.items():
             if isinstance(value, str):
                 self.register(name, value)
 
@@ -382,6 +380,219 @@ class PathResolver(Generic[ContextT]):
             return self.context_type(**context_data)
 
         return None
+
+    def register_token_values(self, token: str, values: list[str]) -> None:
+        """
+        Register possible values for a token to enable structure generation.
+
+        Args:
+            token (str): Token name (e.g., 'file_type', 'dcc').
+            values (list[str]): All possible values for this token.
+        """
+        self._token_values[token] = values
+
+    def get_token_values(self, token: str) -> list[str]:
+        """
+        Get registered values for a token.
+
+        Args:
+            token (str): Token name.
+        Returns:
+            list[str]: Registered values, or empty list if none.
+        """
+        return self._token_values.get(token, [])
+
+    def create_structure(
+        self,
+        name: str,
+        context: ContextT,
+        dry_run: bool = False,
+        stop_at_token: Optional[str] = None,
+    ) -> list[Path]:
+        """
+        Create directory structure by expanding partial context with registered
+        token values.
+
+        For any token in the template that:
+        1. Has registered values via register_token_values()
+        2. Is NOT populated in the provided context
+        3. Comes before stop_at_token (if specified)
+
+        This method will create all combinations of directories.
+
+        Args:
+            name (str): Template name to use.
+            context (ContextT): Partial context with some values populated.
+            dry_run (bool): If True, return paths without creating directories.
+            stop_at_token (str): Optional token name to stop expansion at.
+                All tokens after this in the template will not be expanded.
+        Returns:
+            list[Path]: All created (or would-be-created) directory paths.
+
+        Example:
+            >>> resolver.register_token_values('dcc', ['maya', 'blender', 'nuke'])
+            >>> resolver.register_token_values('file_type', ['ma', 'fbx', 'abc'])
+            >>> ctx = AssetContext(project='TEST', category='char', asset='Ghost_A')
+            >>> paths = resolver.create_structure('asset', ctx, stop_at_token='file_type')
+            # Creates: .../Ghost_A/maya/ma, .../Ghost_A/maya/fbx, etc.
+        """
+        if name not in self.templates:
+            raise KeyError(f"Template '{name}' not registered")
+
+        template = self.templates[name]
+        context_dict = {k: v for k, v in asdict(context).items() if v is not None}
+        ordered_tokens = self._extract_ordered_tokens(template.pattern)
+
+        stop_index = len(ordered_tokens)
+        if stop_at_token:
+            token_names = [t["name"] for t in ordered_tokens]
+            try:
+                stop_index = token_names.index(stop_at_token)
+            except ValueError:
+                raise ValueError(
+                    f"stop_at_token '{stop_at_token}' not found in template. "
+                    f"Available tokens: {token_names}"
+                )
+
+        expansion_tokens = []
+        for i, token_info in enumerate(ordered_tokens[:stop_index]):
+            token_name = token_info["name"]
+
+            # Skip if already in context
+            if token_name in context_dict:
+                continue
+
+            # Skip if no registered values
+            if token_name not in self._token_values:
+                continue
+
+            expansion_tokens.append(token_name)
+
+        paths = self._expand_contexts(
+            template, context, expansion_tokens, stop_index, ordered_tokens
+        )
+
+        if not dry_run:
+            for path in paths:
+                path.mkdir(parents=True, exist_ok=True)
+
+        return paths
+
+    @staticmethod
+    def _extract_ordered_tokens(pattern: str) -> list[dict]:
+        """
+        Extract tokens in the order they appear in the pattern.
+
+        Returns:
+            list[dict]: List of dicts with 'name', 'formatter', 'position'.
+        """
+        tokens = []
+        for match in PathTemplate.TOKEN_PATTERN.finditer(pattern):
+            tokens.append(
+                {
+                    "name": match.group(1),
+                    "formatter": match.group(2),
+                    "position": match.start(),
+                }
+            )
+        return tokens
+
+    def _expand_contexts(
+        self,
+        template: PathTemplate[ContextT],
+        base_context: ContextT,
+        expansion_tokens: list[str],
+        stop_index: int,
+        ordered_tokens: list[dict],
+    ) -> list[Path]:
+        """
+        Recursively expand context with all token value combinations.
+
+        Args:
+            template (PathTemplate): Template to format.
+            base_context (ContextT): Starting context.
+            expansion_tokens (list[str]): Tokens that need expansion.
+            stop_index (int): Index in ordered_tokens to stop at.
+            ordered_tokens (list[dict]): All tokens in order.
+        Returns:
+            list[Path]: All expanded directory paths.
+        """
+        if not expansion_tokens:
+            # Base case: no more tokens to expand
+            # Format up to stop_index tokens only
+            partial_pattern = self._truncate_pattern_at_index(
+                template.pattern, stop_index, ordered_tokens
+            )
+            partial_template = PathTemplate(
+                partial_pattern,
+                normalizers=template.normalizers,
+            )
+
+            # Only format if we have all required tokens for partial pattern
+            if partial_template.can_format(base_context):
+                formatted = partial_template.format(base_context)
+                return [Path(formatted)]
+            return []
+
+        # Recursive case: expand next token
+        token_name = expansion_tokens[0]
+        remaining_tokens = expansion_tokens[1:]
+
+        paths = []
+        for value in self._token_values[token_name]:
+            context_dict = asdict(base_context)
+            context_dict[token_name] = value
+            new_context = self.context_type(**context_dict)
+
+            # Recursively expand remaining tokens
+            paths.extend(
+                self._expand_contexts(
+                    template, new_context, remaining_tokens, stop_index, ordered_tokens
+                )
+            )
+
+        return paths
+
+    @staticmethod
+    def _truncate_pattern_at_index(
+        pattern: str,
+        stop_index: int,
+        ordered_tokens: list[dict],
+    ) -> str:
+        """
+        Truncate pattern to include all tokens up to (but not including) stop_index.
+        Returns the directory path that includes the last expanded token.
+
+        Args:
+            pattern (str): Full template pattern.
+            stop_index (int): Index to stop at (exclusive).
+            ordered_tokens (list[dict]): Ordered token information.
+        Returns:
+            str: Truncated pattern string.
+        """
+        if stop_index == 0:
+            return ""
+
+            # If stop_index >= len(ordered_tokens), we want ALL tokens
+            # Don't truncate, return full pattern
+        if stop_index >= len(ordered_tokens):
+            return pattern
+
+        # We want to include tokens 0 through stop_index-1
+        # Find where token at stop_index starts, and truncate just before it
+        stop_token = ordered_tokens[stop_index]
+        stop_position = stop_token["position"]
+
+        # Walk backwards from stop_position to find the directory separator
+        # that comes BEFORE the stop_token
+        truncate_pos = stop_position - 1
+        while truncate_pos > 0 and pattern[truncate_pos] not in ("/", "\\"):
+            truncate_pos -= 1
+
+        if truncate_pos > 0:
+            return pattern[:truncate_pos]
+
+        return pattern[:stop_position]  # No sep
 
 
 class CompositeResolver(object):

@@ -120,21 +120,14 @@ class TestPathResolverInheritance:
 
         assert path == Path("/mnt/storage/shows/demo/seq/010")
 
-    def test_load_from_json_with_inheritance(self, tmp_path: Path) -> None:
-        json_file = tmp_path / "templates.json"
+    def test_load_from_dict_with_inheritance(self) -> None:
         templates = {
             "show_base": "V:/shows/<show>",
             "seq_base": {"pattern": "seq/<seq>", "base": "show_base"},
             "shot": {"pattern": "<shot>/work", "base": "seq_base"},
         }
-
-        import json
-
-        with open(json_file, "w") as f:
-            json.dump(templates, f)
-
         resolver = PathResolver(VFXContext)
-        resolver.load_from_json(json_file)
+        resolver.from_dict(templates)
 
         ctx = VFXContext(show="demo", seq="010", shot="0010")
         path = resolver.resolve("shot", ctx)
