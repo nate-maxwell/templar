@@ -7,11 +7,11 @@ token placeholders, then generate paths from context values or parse existing
 paths back into structured data.
 """
 
-from templar._query import Query
-from templar._query import CachedQuery
-from templar._query import TwoTierCachedQuery
-from templar._query import LazyQuery
-from templar._templartypes import ContextT
-from templar._resolvers import CompositeResolver
-from templar._resolvers import PathResolver
-from templar._path_template import PathTemplate
+from templar.query import Query
+from templar.query import CachedQuery
+from templar.query import TwoTierCachedQuery
+from templar.query import LazyQuery
+from templar.templartypes import ContextT
+from templar.resolvers import CompositeResolver
+from templar.resolvers import PathResolver
+from templar.path_template import PathTemplate

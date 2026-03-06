@@ -4,7 +4,7 @@ from typing import Callable
 from typing import Generic
 from typing import Optional
 
-from templar._templartypes import ContextT
+from templar.templartypes import ContextT
 
 
 class PathTemplate(Generic[ContextT]):

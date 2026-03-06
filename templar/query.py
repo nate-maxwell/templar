@@ -16,8 +16,8 @@ from typing import Generic
 from typing import Iterator
 from typing import Optional
 
-from templar._templartypes import ContextT
-from templar._resolvers import PathResolver
+from templar.templartypes import ContextT
+from templar.resolvers import PathResolver
 
 # -----Base Query--------------------------------------------------------------
 

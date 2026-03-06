@@ -5,8 +5,8 @@ from typing import Callable
 from typing import Generic
 from typing import Optional
 
-from templar._path_template import PathTemplate
-from templar._templartypes import ContextT
+from templar.path_template import PathTemplate
+from templar.templartypes import ContextT
 
 
 class PathResolver(Generic[ContextT]):

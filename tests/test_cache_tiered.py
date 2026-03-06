@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Optional
 
 from templar import PathResolver
-from templar._query import TwoTierCachedQuery
+from templar.query import TwoTierCachedQuery
 
 
 @dataclass

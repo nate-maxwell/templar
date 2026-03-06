@@ -5,7 +5,7 @@ from typing import Optional
 import pytest
 
 from templar import PathResolver
-from templar._query import CachedQuery
+from templar.query import CachedQuery
 
 
 @dataclass
