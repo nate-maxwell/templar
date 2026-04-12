@@ -1,0 +1,6 @@
+{
+    "name": "broker",
+    "authors": ["Nate Maxwell"],
+    "version": "1.11.6",
+    "env": {}
+}
