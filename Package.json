@@ -1,0 +1,7 @@
+{
+    "name": "templar",
+    "authors": ["Marty McFly"],
+    "description": "Python-based hello world example package.",
+    "version": "1.4.1",
+    "env": {}
+}
