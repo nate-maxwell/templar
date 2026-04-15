@@ -1,7 +1,7 @@
 {
     "name": "templar",
     "authors": ["Marty McFly"],
-    "description": "Python-based hello world example package.",
+    "description": "Dataclass-centric path templating library.",
     "version": "1.4.1",
     "env": {}
 }
