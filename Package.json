@@ -1,7 +1,0 @@
-{
-    "name": "templar",
-    "authors": ["Marty McFly"],
-    "description": "Dataclass-centric path templating library.",
-    "version": "1.4.1",
-    "env": {}
-}
