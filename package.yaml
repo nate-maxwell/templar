@@ -1,6 +1,0 @@
-name: templar
-authors:
-  - Marty McFly
-description: Dataclass-based path templating library.
-version: 1.4.1
-env: {}
