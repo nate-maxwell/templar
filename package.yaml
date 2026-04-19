@@ -1,0 +1,6 @@
+name: templar
+authors:
+  - Nate Maxwell
+description: A lightweight, type-safe path templating system for building and parsing file paths from dataclass contexts.
+version: 1.4.1
+env: {}
