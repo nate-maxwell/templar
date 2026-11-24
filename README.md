@@ -283,18 +283,22 @@ The `stop_at_token` parameter controls expansion depth - only tokens **before** 
 
 Templates can be loaded from a dict formatted like so:
 
-```python
-data = {
-  "show_base": "V:/shows/<show>",
-  "seq_base": {
-    "pattern": "seq/<seq>",
-    "base": "show_base"
-  },
-  "shot": {
-    "pattern": "<shot>/__pub__",
-    "base": "seq_base"
-  }
+```json
+{
+    "show_base": "V:/shows/<show>",
+    "seq_base":
+    {
+        "pattern": "seq/<seq>",
+        "base": "show_base"
+    },
+    "shot":
+    {
+        "pattern": "<shot>/__pub__",
+        "base": "seq_base"
+    }
 }
+```
 
+```python
 resolver.from_dict(data)
 ```
