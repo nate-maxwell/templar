@@ -135,6 +135,15 @@ asset_path = composite.resolve("asset", asset_ctx)
 
 ## Query
 
+A `Query` searches every file and directory under a root folder, asks the `PathResolver`
+to match each path agianst its registered templates, converts matching paths into
+dataclasses, and yields only objects whose fields exactly match the filters passed
+to `query()`.
+
+For example, `query.query(show="demo", seq="0010")` returns contexts parsed from paths
+where both `show == "demo"` and `seq = "0010"`; calling it without filters returns every
+successfully parsed path.
+
 Find existing files on disk that match your templates:
 
 ```python
