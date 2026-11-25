@@ -16,10 +16,8 @@ from typing import Generic
 from typing import Iterator
 from typing import Optional
 
-from templar.templartypes import ContextT
+from templar.path_template import ContextT
 from templar.resolvers import PathResolver
-
-# -----Base Query--------------------------------------------------------------
 
 
 class Query(object):
@@ -64,9 +62,6 @@ class Query(object):
         """Recursively walks the root path, yielding each path."""
         for path in self.root.rglob("*"):
             yield path
-
-
-# -----Cached Queries----------------------------------------------------------
 
 
 class CachedQuery(Query, Generic[ContextT]):

@@ -11,7 +11,7 @@ from templar.query import Query
 from templar.query import CachedQuery
 from templar.query import TwoTierCachedQuery
 from templar.query import LazyQuery
-from templar.templartypes import ContextT
 from templar.resolvers import CompositeResolver
 from templar.resolvers import PathResolver
 from templar.path_template import PathTemplate
+from templar.path_template import ContextT

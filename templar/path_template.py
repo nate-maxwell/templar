@@ -3,8 +3,11 @@ from dataclasses import asdict
 from typing import Callable
 from typing import Generic
 from typing import Optional
+from typing import TypeVar
 
-from templar.templartypes import ContextT
+from templar import _formatters
+
+ContextT = TypeVar("ContextT")
 
 
 class PathTemplate(Generic[ContextT]):
@@ -59,22 +62,13 @@ class PathTemplate(Generic[ContextT]):
         Returns:
             str: Formatted value.
         """
-        if formatter.startswith("default="):
-            default_value = formatter[len("default=") :]
-            return value if value else default_value
+        named = _formatters.NAMED_FORMATTERS.get(formatter)
+        if named is not None:
+            return named(value)
 
-        if formatter.isdigit():
-            width = int(formatter)
-            if value.isdigit():
-                return value.zfill(width)
-            return value
-
-        if formatter == "upper":
-            return value.upper()
-        elif formatter == "lower":
-            return value.lower()
-        elif formatter == "title":
-            return value.title()
+        for matches, handler in _formatters.PREDICATE_FORMATTERS:
+            if matches(formatter):
+                return handler(value, formatter)
 
         return value
 
