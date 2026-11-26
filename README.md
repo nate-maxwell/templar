@@ -300,5 +300,5 @@ Templates can be loaded from a dict formatted like so:
 ```
 
 ```python
-resolver.from_dict(data)
+resolver.from_dict(my_dict)
 ```
