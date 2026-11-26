@@ -9,6 +9,12 @@ from templar.path_template import PathTemplate
 from templar.path_template import ContextT
 
 
+Normalizer = Callable[[str], str]
+"""A function that operates on a token of a path."""
+
+StrToNormalizerMapping = dict[str, Normalizer]
+
+
 class PathResolver(Generic[ContextT]):
     """
     Resolves path templates based on context.
@@ -24,8 +30,8 @@ class PathResolver(Generic[ContextT]):
     def __init__(
         self,
         context_type: type[ContextT],
-        variables: dict[str, str] = None,
-        normalizers: dict[str, Callable[[str], str]] = None,
+        variables: Optional[dict[str, str]] = None,
+        normalizers: Optional[StrToNormalizerMapping] = None,
     ) -> None:
         self.templates: dict[str, PathTemplate[ContextT]] = {}
         self.context_type = context_type
@@ -97,14 +103,14 @@ class PathResolver(Generic[ContextT]):
         return Path(self.templates[name].format(context))
 
     def resolve_any(
-        self, context: ContextT, prefer: list[str] = None
+        self, context: ContextT, prefer: Optional[list[str]] = None
     ) -> Optional[Path]:
         """
         Find and resolve first matching template.
 
         Args:
             context (ContextT): Context values.
-            prefer (list[str]): Ordered list of template names to prefer.
+            prefer (Optional[list[str]]): Ordered list of template names to prefer.
         Returns:
             Path: Formatted path from first matching template, or None.
         """
@@ -373,8 +379,8 @@ class PathResolver(Generic[ContextT]):
         if stop_index == 0:
             return ""
 
-            # If stop_index >= len(ordered_tokens), we want ALL tokens
-            # Don't truncate, return full pattern
+        # If stop_index >= len(ordered_tokens), we want ALL tokens
+        # Don't truncate, return full pattern
         if stop_index >= len(ordered_tokens):
             return pattern
 
@@ -406,8 +412,8 @@ class CompositeResolver(object):
 
     def __init__(
         self,
-        variables: dict[str, str] = None,
-        normalizers: dict[str, Callable[[str], str]] = None,
+        variables: Optional[dict[str, str]] = None,
+        normalizers: Optional[StrToNormalizerMapping] = None,
     ) -> None:
         self._registry: dict[type, PathResolver] = {}
         self.variables = variables or {}
@@ -420,6 +426,19 @@ class CompositeResolver(object):
         pattern: str,
         base: Optional[str] = None,
     ) -> None:
+        """
+        Register a path template for a specific context type.
+
+        Creates a PathResolver for the context type if one doesn't exist, then
+        registers the template. This allows managing templates across multiple
+        context types through a single CompositeResolver.
+
+        Args:
+            context_type (type[ContextT]): The dataclass type this template applies to.
+            name (str): Template identifier.
+            pattern (str): Path pattern with <token> placeholders.
+            base (Optional[str]): Optional name of base template to extend.
+        """
         if context_type not in self._registry:
             resolver = PathResolver(
                 context_type, variables=self.variables, normalizers=self.normalizers
@@ -444,14 +463,14 @@ class CompositeResolver(object):
         return resolver.resolve(name, context)
 
     def resolve_any(
-        self, context: ContextT, prefer: list[str] = None
+        self, context: ContextT, prefer: Optional[list[str]] = None
     ) -> Optional[Path]:
         """
         Find and resolve the first matching template for the context's type.
 
         Args:
             context (ContextT): Context instance with values.
-            prefer (list[str]): Optional ordered list of template names to try first.
+            prefer (Optional[list[str]]): Optional ordered list of template names to try first.
         Returns:
             Path: Formatted path from first matching template, or None.
         """
